@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>CHIMBOY — Kino va Seriallar</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --surface: #121824;
+      --card: #172030;
+      --card-elev: #1e293d;
+      --border: #2b3850;
+      --azure: #2aabee;
+      --cyan: #5ce1e6;
+      --gold: #f5b74f;
+      --rose: #ff5c77;
+      --text: #f3f6fc;
+      --muted: #9ba8c0;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 12px 14px calc(28px + env(safe-area-inset-bottom));
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 4px 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--azure), var(--gold));
+      display: grid;
+      place-items: center;
+      color: #0b0f17;
+      font-weight: 800;
+      font-size: 18px;
+      box-shadow: 0 6px 20px rgba(42, 171, 238, 0.32);
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      margin: 0;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--cyan);
+      margin: 1px 0 0;
+    }
+
+    .tg-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(42, 171, 238, 0.14);
+      border: 1px solid rgba(42, 171, 238, 0.4);
+      color: var(--cyan);
+    }
+
+    .search-box {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--azure);
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      scrollbar-width: none;
+    }
+
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .chip.active {
+      background: var(--azure);
+      color: #0b0f17;
+      border-color: var(--azure);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (min-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(43, 56, 80, 0.75);
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:active {
+      transform: scale(0.98);
+    }
+
+    .poster {
+      position: relative;
+      aspect-ratio: 0.68;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 8px;
+      background: #0d1320;
+    }
+
+    .poster-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .poster-scrim {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(180deg, rgba(11,15,23,0.38) 0%, rgba(11,15,23,0.0) 40%, rgba(11,15,23,0.68) 100%);
+    }
+
+    .poster-top {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-footer {
+      padding: 9px 10px 10px;
+    }
+
+    .ep-badge {
+      background: rgba(11, 15, 23, 0.82);
+      border: 1px solid rgba(92, 225, 230, 0.45);
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .fav-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(11, 15, 23, 0.72);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .fav-btn.active {
+      color: var(--rose);
+    }
+
+    .poster-title {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin: 0 0 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .poster-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Player Detail View */
+    .detail {
+      display: none;
+    }
+
+    .detail.open {
+      display: block;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .back-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .video-wrap {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+    }
+
+    .nav-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .nav-btn.primary {
+      background: var(--azure);
+      border-color: var(--azure);
+      color: #0b0f17;
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .info-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .info-poster {
+      width: 78px;
+      aspect-ratio: 0.68;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .info-title {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .info-genre {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--cyan);
+    }
+
+    .info-desc {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .ep-section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0 0 10px;
+    }
+
+    .ep-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (min-width: 600px) {
+      .ep-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+    }
+
+    .ep-btn {
+      padding: 11px 8px;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: var(--card-elev);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .ep-btn.active {
+      background: var(--azure);
+      border-color: var(--cyan);
+      color: #0b0f17;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="catalogView">
+      <div class="header">
+        <div class="brand">
+          <div class="brand-badge">C</div>
+          <div>
+            <h1 class="brand-title">CHIMBOY</h1>
+            <p class="brand-sub">Telegram Mini App • Kino &amp; Serial</p>
+          </div>
+        </div>
+        <span class="tg-pill" id="tgStatus">WebApp</span>
+      </div>
+
+      <div class="search-box">
+        <input id="searchInput" class="search-input" type="search" placeholder="Kino yoki serial qidirish…" />
+      </div>
+
+      <div class="chips" id="filterChips">
+        <button class="chip active" data-filter="all">Barchasi</button>
+        <button class="chip" data-filter="series">Seriallar</button>
+        <button class="chip" data-filter="movies">Kinolar</button>
+        <button class="chip" data-filter="favs">Sevimlilar</button>
+      </div>
+
+      <div class="grid" id="catalogGrid"></div>
+    </div>
+
+    <div id="detailView" class="detail">
+      <div class="detail-header">
+        <button class="back-btn" id="backBtn">← Orqaga</button>
+        <span class="tg-pill" id="playingBadge">1-qism</span>
+      </div>
+
+      <div class="video-wrap">
+        <video
+          id="chimboyVideo"
+          controls
+          playsinline
+          webkit-playsinline
+          preload="metadata"
+          controlsList="nodownload"
+        ></video>
+      </div>
+
+      <div class="nav-row" id="epNavRow">
+        <button class="nav-btn" id="prevEpBtn">← Oldingi qism</button>
+        <button class="nav-btn primary" id="nextEpBtn">Keyingi qism →</button>
+      </div>
+
+      <div class="info-card">
+        <img id="detailPoster" class="info-poster" alt="" referrerpolicy="no-referrer" />
+        <div>
+          <h2 class="info-title" id="detailTitle"></h2>
+          <p class="info-genre" id="detailGenre"></p>
+          <p class="info-desc" id="detailDesc"></p>
+        </div>
+      </div>
+
+      <h3 class="ep-section-title">Qismlar ro‘yxati</h3>
+      <div class="ep-grid" id="episodeGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      try {
+        tg.setHeaderColor("#0b0f17");
+        tg.setBackgroundColor("#0b0f17");
+      } catch (e) {}
+      document.getElementById("tgStatus").textContent = "TG Mini App";
+    }
+
+    const PALETTES = [
+      ["#2aabee", "#0d1b3e"],
+      ["#f472b6", "#2a1230"],
+      ["#f5b74f", "#2c1d0d"],
+      ["#34d399", "#0c2822"],
+      ["#ef4444", "#2c0e14"],
+      ["#a855f7", "#211136"]
+    ];
+
+    const META_MAP = {
+      "og'ir atletika parisi": { order: 1, title: "Og‘ir Atletika Parisi", genre: "Romantika • Sport", year: "2016", poster: "https://lens.usercontent.google.com/image?vsrid=CJqXlZz4xdTMyQEQAhgBIiQ4Y2E3M2EyZC03ZTlhLTRmMzItOGFjZC1mZWNhZDhiM2FjNTQyggEiAmx1KENCdAoubGZlLWR1bW15OjA0MzIzMzJkLTgwNGMtNDg5Mi05NWI1LWFkZGEwOGEwMGEyZBJCCkAvYm5zL2x1L2JvcmcvbHUvYm5zL2xlbnMtZnJvbnRlbmQtYXBpL3Byb2QubGVucy1mcm9udGVuZC1hcGkvMTMzWgQKAmx1OKeslNfc9JcD&gsessionid=_uRrWLlYfqhRe2F3OLbzksNkZNLyhBp-rawl00H54WpQHM8z1QoEFg" },
+      "biznes taklifi": { order: 2, title: "Biznes taklifi", genre: "Romantika • Komediya", year: "2022", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmq-FgiCbLO6hxQdcuCIp8Oqt3g25VeprAaa6oMTwEHg&s=10" },
+      "kuchli": { order: 3, title: "Kuchli", genre: "Fantastika • Komediya", year: "2023", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8hVm5zyin8fM8o7OEI2DokBjt_GGoe0RkxfJIueq4eI99h8WXWraKODc&s=10" },
+      "maktabdagi yashirin xizmat": { order: 4, title: "Maktabdagi Yashirin Xizmat", genre: "Jangari • Detektiv", year: "2025", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhuhwZuvb6Mbi3iEfqh6ftrgiXTDI-N2g-a3KvezTjrNmFmXK8YSOo3vQ&s=10" },
+      "o’zganing qasosi": { order: 5, title: "O’zganing qasosi", genre: "Triller • Drama", year: "2022", poster: "https://pub-185045f601234a138d27914bac920a64.r2.dev/posters/import/ozganing-qasosi-69166f0f.jpg" },
+      "bori bola": { order: 6, title: "Bori bola", genre: "Melodrama • Fantastika", year: "2012", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXtq44FIx7MNACKXWLBLrunb_BaHmjPWkq-Vl6NroNOg&s=10" },
+      "odamzod bogi": { order: 7, title: "Odamzod Bogi", genre: "Drama • Fantastika", year: "2024", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPbqftZjlsOz9fpjUX-nXbezKMEepnv1BpYtxygQ-tWg&s=10" },
+      "yer qiroli": { order: 8, title: "Yer Qiroli", genre: "Romantika • Komediya", year: "2023", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSVQVgu8HFTSfISVCIPzXc6ifzUBnqvhiT0NFJ0kFB3w&s=10" },
+      "shaxsiy tansoqchi": { order: 9, title: "Shaxsiy tansoqchi", genre: "Jangari • Triller", year: "2016", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4HU9z0cGmMyAfBkaUyb_6Np6fLLoD_3lr_SNCQwQ_6Q&s=10" },
+      "rapunsel": { order: 10, title: "rapunsel", genre: "Multfilm • Sarguzasht", year: "2010", poster: "https://i.pinimg.com/564x/1c/a0/69/1ca0693871982c1951f2a9662e5c3ba5.jpg" },
+      "zolushka": { order: 11, title: "Zolushka", genre: "Romantika • Drama", year: "2016", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSpzwhtvG7YG4nh9-vfOFQhVkPuSq-fzL8Wd1Qhp1ZtGQ&s=10" },
+      "zolimni oshpazi": { order: 12, title: "Zolimni oshpazi", genre: "Tarixiy • Fantastika", year: "2025", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRvusOnQUSC4k7baPitYI0hxtoxwTl68Cn996fCUUihRg&s=10" },
+      "jinoyat 101": { order: 13, title: "Jinoyat 101", genre: "Kriminal • Triller", year: "2026", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSZBEGd4bEi3Di6LBuIfuP-O3mtiNZWXPUp-1VnoNJTg&s=10" },
+      "yolgizlar": { order: 14, title: "Yolgizlar", genre: "Drama • Romantika", year: "2023", poster: "https://img.kinochilar.com/episode_thumbs/12989/ep_1.webp?v=1779789423" },
+      "inqirozdagi": { order: 15, title: "Inqirozdagi", genre: "Tibbiyot • Romantika", year: "2024", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTCNFfIDKmlUGkzxoMI1meR92CkzXk1v9UAFLpggX03mQ&s=10" },
+      "2125": { order: 16, title: "2125", genre: "Melodrama • Yoshlik", year: "2022", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHqlMsIC71P8VgWH1lz8ox12g0bbqzbXTRE12JdIHR8S8sk2n05S6qBjk&s=10" },
+      "kupidon": { order: 17, title: "Kupidon", genre: "Fantastika • Romantika", year: "2023", poster: "https://dorama.land/storage/generated/episodes/77/x2/moy-muzhchina-kupidon-5-seriya.webp?v=1" },
+      "harakatda": { order: 18, title: "Harakatda", genre: "Fantastika • Superkuch", year: "2023", poster: "https://pub-185045f601234a138d27914bac920a64.r2.dev/posters/import/harakatda-87abbc26.jpg" },
+      "ojiz": { order: 19, title: "Ojiz", genre: "Maktab • Jangari", year: "2022", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQokZ_WW-xY_hJ57xR0XH2D27Q0S9pnLiLga4UH3SCkD2T7Rju3k_0magFM&s=10" },
+      "kotiba": { order: 20, title: "Kotiba", genre: "Romantika • Komediya", year: "2018", poster: "https://pub-185045f601234a138d27914bac920a64.r2.dev/posters/import/kotiba-kimga-nima-boldi-12c6ed87.jpg" },
+      "tulki": { order: 21, title: "Tulki", genre: "Fantastika • Mistika", year: "2020", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQp34NOejDrNwpI-nkW0iE1XEWmf_fgB1veTVQDoV3Q5UKibmAXCY4rjY0&s=10" },
+      "tulki 1938": { order: 22, title: "Tulki 1938", genre: "Fantastika • Tarixiy", year: "2023", poster: "https://images.uzum.uz/cu98meei4n324lr5t6f0/original.jpg" },
+      "dokon yulduzi": { order: 23, title: "Dokon yulduzi", genre: "Komediya • Romantika", year: "2020", poster: "https://mohidub.net/uploads/posts/2024-04/dokon-yulduzi.jpg" },
+      "qaytgan bezori": { order: 24, title: "qaytgan bezori", genre: "Maktab • Drama", year: "2024", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeFIngaVbp8fN5HDWtX9XTsC0rvnfeKgWWIhAz9HPWbQ&s=10" },
+      "yorqin tarvuz": { order: 25, title: "Yorqin tarvuz", genre: "Musiqa • Fantastika", year: "2023", poster: "https://i.pinimg.com/236x/2c/38/83/2c3883e3453e49933bca9e7793f425ee.jpg" },
+      "taxi": { order: 26, title: "Taxi", genre: "Jangari • Kriminal", year: "2023", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTTDvUeKPPJFSdHNHLj6l3QuaEwfNsnM6GrRa0gCg0oVy5Swbo25J4zFBi4&s=10" },
+      "bizning olam": { order: 27, title: "Bizning olam", genre: "Melodrama • Hayotiy", year: "2024", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRt2i6UFRw6bCS8_unPNgc5YClZkxQMI6sp6UchWCmyNE9I-9pZTMN6RJc&s=10" },
+      "labirint": { order: 28, title: "Labirintdagilar", genre: "Fantastika • Sarguzasht", year: "2014", poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwamOOIpnOWYqPGdIUvtD0BF6E63qEjQme7roaKMc8kplT82jcs948MeI&s=10" },
+      "ko’z yoshlar qirolichasi": { order: 29, title: "Ko’z yoshlar qirolichasi", genre: "Melodrama • Romantika", year: "2024", poster: null }
+    };
+
+    let catalog = [];
+    let currentFilter = "all";
+    let searchQuery = "";
+    let activeItem = null;
+    let activeEpIdx = 0;
+    let favorites = new Set(JSON.parse(localStorage.getItem("chimboy_favs") || "[]"));
+
+    function parseM3U(text) {
+      const lines = text.split(/\r?\n/);
+      const groups = new Map();
+      let group = "";
+      let title = "";
+
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+        if (line.toUpperCase().startsWith("#EXTINF")) {
+          const gm = line.match(/group-title="([^"]*)"/i);
+          group = (gm ? gm[1] : "").trim();
+          const commaIdx = line.indexOf(",");
+          title = commaIdx >= 0 ? line.slice(commaIdx + 1).trim() : group;
+        } else if (!line.startsWith("#")) {
+          const key = group || title || "Noma'lum";
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push({ rawTitle: title || key, url: line });
+          group = "";
+          title = "";
+        }
+      }
+
+      let idx = 0;
+      const result = [];
+      for (const [name, eps] of groups.entries()) {
+        const meta = META_MAP[name.toLowerCase()] || META_MAP[name.toLowerCase().replace(/'/g, "’")] || { order: 999, genre: eps.length > 1 ? "Serial" : "Badiiy film", year: "2024", poster: null };
+        const palette = PALETTES[idx % PALETTES.length];
+        const isSeries = eps.length > 1;
+        result.push({
+          order: meta.order || 999,
+          id: name.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+          title: meta.title || name,
+          type: isSeries ? "series" : "movie",
+          genre: meta.genre,
+          year: meta.year,
+          poster: meta.poster,
+          palette,
+          episodes: eps.map((e, i) => {
+            const m = e.rawTitle.match(/(\d+)\s*-?\s*qism/i) || e.rawTitle.match(/(\d+)\s*$/);
+            const num = m ? parseInt(m[1], 10) : i + 1;
+            return {
+              num,
+              label: isSeries ? `${num}-qism` : "To‘liq kino",
+              url: e.url
+            };
+          })
+        });
+        idx++;
+      }
+      result.sort((a, b) => a.order - b.order);
+      return result;
+    }
+
+    function posterSvgDataUrl(item) {
+      const [c1, c2] = item.palette;
+      const safeTitle = item.title.replace(/[<>&"]/g, "");
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 440">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="${c2}"/>
+            <stop offset="100%" stop-color="#0b0f17"/>
+          </linearGradient>
+          <radialGradient id="r" cx="0.3" cy="0.28" r="0.65">
+            <stop offset="0%" stop-color="${c1}" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="${c1}" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="300" height="440" fill="url(#g)"/>
+        <rect width="300" height="440" fill="url(#r)"/>
+        <rect x="92" y="136" width="116" height="28" rx="8" fill="#f5b74f" fill-opacity="0.2" stroke="#f5b74f"/>
+        <text x="150" y="155" text-anchor="middle" fill="#f5b74f" font-family="sans-serif" font-size="12" font-weight="700">CHIMBOY HD</text>
+        <text x="150" y="210" text-anchor="middle" fill="#f3f6fc" font-family="sans-serif" font-size="18" font-weight="800">${safeTitle.slice(0, 20)}</text>
+      </svg>`;
+      return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    }
+
+    function renderCatalog() {
+      const grid = document.getElementById("catalogGrid");
+      const q = searchQuery.trim().toLowerCase();
+      const filtered = catalog.filter(item => {
+        const matchFilter =
+          currentFilter === "all" ||
+          (currentFilter === "series" && item.type === "series") ||
+          (currentFilter === "movies" && item.type === "movie") ||
+          (currentFilter === "favs" && favorites.has(item.id));
+        const matchQuery = !q || item.title.toLowerCase().includes(q) || item.genre.toLowerCase().includes(q);
+        return matchFilter && matchQuery;
+      });
+
+      grid.innerHTML = "";
+      for (const item of filtered) {
+        const card = document.createElement("div");
+        card.className = "card";
+        const isFav = favorites.has(item.id);
+        const fallbackUrl = posterSvgDataUrl(item);
+        const imgSrc = item.poster || fallbackUrl;
+
+        card.innerHTML = `
+          <div class="poster">
+            <img class="poster-bg" src="${imgSrc}" alt="${item.title}" loading="lazy" referrerpolicy="no-referrer" />
+            <div class="poster-scrim"></div>
+            <div class="poster-top">
+              <span class="ep-badge">${item.type === "series" ? item.episodes.length + " qism" : "Kino"}</span>
+              <button class="fav-btn ${isFav ? "active" : ""}" aria-label="Sevimli">${isFav ? "♥" : "♡"}</button>
+            </div>
+          </div>
+          <div class="card-footer">
+            <p class="poster-title">${item.title}</p>
+            <p class="poster-meta">${item.genre} • ${item.year}</p>
+          </div>
+        `;
+        const imgEl = card.querySelector(".poster-bg");
+        imgEl.onerror = () => {
+          if (imgEl.src !== fallbackUrl) imgEl.src = fallbackUrl;
+        };
+        card.querySelector(".fav-btn").addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (favorites.has(item.id)) favorites.delete(item.id);
+          else favorites.add(item.id);
+          localStorage.setItem("chimboy_favs", JSON.stringify([...favorites]));
+          if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+          renderCatalog();
+        });
+        card.addEventListener("click", () => openDetail(item));
+        grid.appendChild(card);
+      }
+    }
+
+    function openDetail(item) {
+      activeItem = item;
+      activeEpIdx = 0;
+      document.getElementById("catalogView").style.display = "none";
+      document.getElementById("detailView").classList.add("open");
+      document.getElementById("detailTitle").textContent = item.title;
+      document.getElementById("detailGenre").textContent = `${item.genre} • ${item.year}`;
+      document.getElementById("detailDesc").textContent = `${item.title} — barcha qismlar CHIMBOY Mini App orqali inline pleerda.`;
+      document.getElementById("epNavRow").style.display = item.episodes.length > 1 ? "flex" : "none";
+
+      const fallbackUrl = posterSvgDataUrl(item);
+      const detailPoster = document.getElementById("detailPoster");
+      detailPoster.src = item.poster || fallbackUrl;
+      detailPoster.onerror = () => {
+        if (detailPoster.src !== fallbackUrl) detailPoster.src = fallbackUrl;
+      };
+
+      if (tg && tg.BackButton) {
+        tg.BackButton.show();
+        tg.BackButton.onClick(closeDetail);
+      }
+      playEpisode(0);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function closeDetail() {
+      const video = document.getElementById("chimboyVideo");
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      document.getElementById("detailView").classList.remove("open");
+      document.getElementById("catalogView").style.display = "block";
+      if (tg && tg.BackButton) tg.BackButton.hide();
+    }
+
+    function playEpisode(idx) {
+      if (!activeItem || idx < 0 || idx >= activeItem.episodes.length) return;
+      activeEpIdx = idx;
+      const ep = activeItem.episodes[idx];
+      document.getElementById("playingBadge").textContent = ep.label;
+
+      const video = document.getElementById("chimboyVideo");
+      video.setAttribute("playsinline", "");
+      video.setAttribute("webkit-playsinline", "");
+      video.src = ep.url;
+      video.play().catch(() => {});
+
+      document.getElementById("prevEpBtn").disabled = idx <= 0;
+      document.getElementById("nextEpBtn").disabled = idx >= activeItem.episodes.length - 1;
+
+      const epGrid = document.getElementById("episodeGrid");
+      epGrid.innerHTML = "";
+      activeItem.episodes.forEach((episode, i) => {
+        const btn = document.createElement("button");
+        btn.className = "ep-btn" + (i === idx ? " active" : "");
+        btn.textContent = episode.label;
+        btn.addEventListener("click", () => playEpisode(i));
+        epGrid.appendChild(btn);
+      });
+    }
+
+    document.getElementById("backBtn").addEventListener("click", closeDetail);
+    document.getElementById("prevEpBtn").addEventListener("click", () => playEpisode(activeEpIdx - 1));
+    document.getElementById("nextEpBtn").addEventListener("click", () => playEpisode(activeEpIdx + 1));
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      renderCatalog();
+    });
+
+    document.querySelectorAll("#filterChips .chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#filterChips .chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        currentFilter = chip.dataset.filter;
+        renderCatalog();
+      });
+    });
+
+    window.loadChimboyM3u = function(m3uText) {
+      if (!m3uText) return;
+      catalog = parseM3U(m3uText);
+      renderCatalog();
+    };
+
+    fetch("./CHIMBOY.m3u")
+      .then(r => r.ok ? r.text() : Promise.reject())
+      .then(txt => window.loadChimboyM3u(txt))
+      .catch(() => {
+        fetch("../CHIMBOY.m3u")
+          .then(r => r.ok ? r.text() : Promise.reject())
+          .then(txt => window.loadChimboyM3u(txt))
+          .catch(() => {});
+      });
+  </script>
+</body>
+</html>
